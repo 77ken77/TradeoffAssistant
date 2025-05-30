@@ -30,12 +30,28 @@ def index():
         for i in range(5):
             row = []
             for d in range(3):
-                v = request.form.get(f'values_{i}_{d}', '')
-                try:
-                    row.append(float(v))
-                except (ValueError, TypeError):
-                    row.append(0.0)
+                v = request.form.getlist(f'summary_{i}_{d}')
+                if v and v[0] != '':
+                    try:
+                        v_float = float(v[0])
+                    except (ValueError, TypeError):
+                        v_float = 0.0
+                else:
+                    v_float = 0.0
+                row.append(v_float)
             vals.append(row)
+
+        # DEBUG: Print all incoming form data
+        print('--- FORM DATA ---')
+        for k in request.form:
+            print(f'{k}: {request.form.getlist(k)}')
+        print('-----------------')
+
+        # DEBUG: Print the vals matrix
+        print('--- VALS MATRIX ---')
+        for i, row in enumerate(vals):
+            print(f'Constraint {i}: {row}')
+        print('-------------------')
 
         # Build raw_data: {constraint_name: [v1, v2, v3], ...}
         raw_data = {
@@ -47,16 +63,14 @@ def index():
 
         for col, pref in zip(names, prefs):
             col_vals = df_raw[col]
-            mn, mx   = col_vals.min(), col_vals.max()
-
+            mn, mx = col_vals.min(), col_vals.max()
             if mx == mn:
                 df_norm[col] = 5.0
             elif pref == 'max':
                 df_norm[col] = 9 * (col_vals - mn) / (mx - mn) + 1
             else:
                 df_norm[col] = 9 * (mx - col_vals) / (mx - mn) + 1
-
-            df_norm[col] = df_norm[col].round(2)
+            df_norm[col] = df_norm[col].round(6)
 
         # 3) Compute weighted, normalized scores
         total_imp = sum(importances)
@@ -81,7 +95,8 @@ def index():
             pcts=[round(x, 1) for x in pcts],
             norms=norms,
             scores=scores,
-            total_imp=total_imp
+            total_imp=total_imp,
+            raw_data=raw_data
         )
 
     # GET → empty form
@@ -106,9 +121,10 @@ def _generate_sensitivity_chart(df_raw, prefs, names):
         if mx == mn:
             df_norm[col] = 5.0
         elif pref == 'max':
-            df_norm[col] = 9*(vals - mn)/(mx - mn) + 1
+            df_norm[col] = 9 * (vals - mn) / (mx - mn) + 1
         else:
-            df_norm[col] = 9*(mx - vals)/(mx - mn) + 1
+            df_norm[col] = 9 * (mx - vals) / (mx - mn) + 1
+        df_norm[col] = df_norm[col].round(6)
 
     # 2) Sensitivity over all 120 permutations
     perms = list(permutations([10,9,8,7,6]))

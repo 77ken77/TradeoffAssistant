@@ -131,8 +131,13 @@ document.addEventListener('DOMContentLoaded', () => {
       sum += total;
       count++;
     });
-    const isAverage = table.querySelector('tfoot tr td').textContent.includes('AVERAGE');
-    table.querySelector('.item-table-sum').textContent = isAverage && count ? (sum / count).toFixed(2) : sum.toFixed(2);
+    const sumCell = table.querySelector('.item-table-sum');
+    const tfootLabelCell = table.querySelector('tfoot tr td');
+    if (!sumCell || !tfootLabelCell) return; // Prevent error if table is not fully rendered
+    const isAverage = tfootLabelCell.textContent.includes('AVERAGE');
+    sumCell.textContent = isAverage && count ? (sum / count).toFixed(2) : sum.toFixed(2);
+    // After updating the table sum, update the summary table and hidden inputs
+    updateSummaryConstraintsTable();
   }
 
   function copyItemToAllDesigns(row, tableId) {
@@ -187,4 +192,219 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // On page load, initialize design value tables
   updateDesignValueTables();
+
+  // --- SUMMARY OF CONSTRAINTS TABLE (INPUT PAGE) ---
+  function updateSummaryConstraintsTable() {
+    document.querySelectorAll('.summary-value-cell').forEach(cell => {
+      const i = cell.getAttribute('data-constraint-index');
+      const d = cell.getAttribute('data-design-index');
+      // If item table, sum all items; else, use input value
+      const designCell = document.querySelector(`.design-value-cell[data-constraint-index='${i}'][data-design-index='${d}']`);
+      let value = '';
+      if (designCell) {
+        const table = designCell.querySelector('.item-table');
+        if (table) {
+          // Sum all item values
+          let sum = 0;
+          table.querySelectorAll('tbody tr').forEach(row => {
+            const val = parseFloat(row.querySelector('.item-value')?.value || '0');
+            const qty = parseFloat(row.querySelector('.item-qty')?.value || '1');
+            sum += val * qty;
+          });
+          value = sum.toFixed(2);
+        } else {
+          const inp = designCell.querySelector('input.design-value-input');
+          value = inp ? inp.value : '';
+        }
+      }
+      // Update visible value in a span, do not overwrite cell content
+      let span = cell.querySelector('.summary-visible-value');
+      if (!span) {
+        span = document.createElement('span');
+        span.className = 'summary-visible-value';
+        cell.prepend(span);
+      }
+      span.textContent = value;
+      // Update hidden input
+      const hidden = cell.querySelector('input[type="hidden"]');
+      if (hidden) hidden.value = value;
+    });
+    // Also update the value attribute of the hidden input (for form submission)
+    document.querySelectorAll('.summary-value-cell input[type="hidden"]').forEach(inp => {
+      inp.setAttribute('value', inp.value);
+    });
+  }
+  // Update summary table on any input change
+  document.addEventListener('input', updateSummaryConstraintsTable);
+  document.addEventListener('change', updateSummaryConstraintsTable);
+  // Initial update
+  updateSummaryConstraintsTable();
+
+  // EXPORT/IMPORT FEATURE
+  // 1. Export all form data to JSON
+  function exportFormData() {
+    const data = {};
+    // Design names
+    data.design_names = Array.from(document.getElementsByName('design_names')).map(inp => inp.value);
+    // Constraints
+    data.constraints = Array.from(document.getElementsByName('constraint_names')).map(inp => inp.value);
+    data.constraint_types = Array.from(document.getElementsByName('constraint_types')).map(sel => sel.value);
+    data.constraint_prefs = Array.from(document.getElementsByName('constraint_prefs')).map(sel => sel.value);
+    data.constraint_imps = Array.from(document.getElementsByName('constraint_imps')).map(sel => sel.value);
+    // Design values (single)
+    data.values = {};
+    document.querySelectorAll('.design-value-cell').forEach(cell => {
+      const i = cell.getAttribute('data-constraint-index');
+      const d = cell.getAttribute('data-design-index');
+      const inp = cell.querySelector('input.design-value-input');
+      if (inp) {
+        data.values[`values_${i}_${d}`] = inp.value;
+      }
+    });
+    // Item tables
+    data.item_tables = {};
+    document.querySelectorAll('.item-table').forEach(table => {
+      const id = table.id;
+      const rows = [];
+      table.querySelectorAll('tbody tr').forEach(row => {
+        const name = row.querySelector('.item-name')?.value || '';
+        const value = row.querySelector('.item-value')?.value || '';
+        const qty = row.querySelector('.item-qty')?.value || '';
+        if (name || value || qty) rows.push({name, value, qty});
+      });
+      data.item_tables[id] = rows;
+    });
+    // Download as JSON
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tradeoff_form_data.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // 2. Import form data from JSON
+  function importFormData(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const data = JSON.parse(e.target.result);
+      // Design names
+      if (data.design_names) {
+        document.getElementsByName('design_names').forEach((inp, idx) => {
+          inp.value = data.design_names[idx] || '';
+          inp.dispatchEvent(new Event('input'));
+        });
+      }
+      // Constraints
+      if (data.constraints) {
+        document.getElementsByName('constraint_names').forEach((inp, idx) => {
+          inp.value = data.constraints[idx] || '';
+          inp.dispatchEvent(new Event('input'));
+        });
+      }
+      if (data.constraint_types) {
+        document.getElementsByName('constraint_types').forEach((sel, idx) => {
+          sel.value = data.constraint_types[idx] || 'single';
+          sel.dispatchEvent(new Event('change'));
+        });
+      }
+      if (data.constraint_prefs) {
+        document.getElementsByName('constraint_prefs').forEach((sel, idx) => {
+          sel.value = data.constraint_prefs[idx] || 'min';
+        });
+      }
+      if (data.constraint_imps) {
+        document.getElementsByName('constraint_imps').forEach((sel, idx) => {
+          sel.value = data.constraint_imps[idx] || '10';
+        });
+      }
+      // Wait for tables to render, then fill values
+      setTimeout(() => {
+        // Design values (single)
+        if (data.values) {
+          Object.entries(data.values).forEach(([key, val]) => {
+            const inp = document.querySelector(`input[name="${key}"]`);
+            if (inp) inp.value = val;
+          });
+        }
+        // Item tables
+        if (data.item_tables) {
+          Object.entries(data.item_tables).forEach(([tableId, rows]) => {
+            // Find the cell for this table
+            const match = tableId.match(/item-table-(\d+)-(\d+)/);
+            if (!match) return;
+            const constraintIdx = match[1];
+            const designIdx = match[2];
+            const cell = document.querySelector(`.design-value-cell[data-constraint-index='${constraintIdx}'][data-design-index='${designIdx}']`);
+            // Get the type for this constraint
+            const typeSel = document.querySelector(`.constraint-type-select[data-constraint-index='${constraintIdx}']`);
+            const type = typeSel ? typeSel.value : 'total';
+            // Re-render the full item table HTML (headers, add-item, sum row)
+            cell.innerHTML = createItemTable(constraintIdx, designIdx, type);
+            const table = cell.querySelector('.item-table');
+            const tbody = table.querySelector('tbody');
+            // Add saved rows
+            rows.forEach(row => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td><input type="text" class="item-name" required value="${row.name}"></td>
+                <td><input type="number" class="item-value" value="${row.value}" step="any" required></td>
+                <td><input type="number" class="item-qty" value="${row.qty}" min="1" step="1" required></td>
+                <td class="item-total">0</td>
+                <td><button type="button" class="delete-item-btn">X DELETE</button></td>
+                <td><button type="button" class="copy-item-btn">COPY</button></td>
+              `;
+              tbody.appendChild(tr);
+              attachRowEvents(tr, table);
+            });
+            updateTableSum(table);
+          });
+        }
+        // After all tables are restored, re-attach all item table events
+        setupItemTableEvents();
+        // And update all table sums again to ensure correct display
+        document.querySelectorAll('.item-table').forEach(table => updateTableSum(table));
+        // Ensure summary table and hidden inputs are updated after import
+        updateSummaryConstraintsTable();
+      }, 200);
+    };
+    reader.readAsText(file);
+  }
+
+  // Add export/import buttons to the page
+  function addExportImportButtons() {
+    const form = document.querySelector('form');
+    if (!form) return;
+    const div = document.createElement('div');
+    div.style.marginBottom = '1rem';
+    div.innerHTML = `
+      <button type="button" id="export-btn">Export</button>
+      <input type="file" id="import-file" style="display:none" accept="application/json">
+      <button type="button" id="import-btn">Import</button>
+    `;
+    form.parentNode.insertBefore(div, form);
+    document.getElementById('export-btn').onclick = exportFormData;
+    document.getElementById('import-btn').onclick = () => {
+      document.getElementById('import-file').click();
+    };
+    document.getElementById('import-file').onchange = function(e) {
+      if (e.target.files && e.target.files[0]) {
+        importFormData(e.target.files[0]);
+      }
+    };
+  }
+
+  // Call after DOM loaded
+  addExportImportButtons();
+
+  // Ensure hidden summary inputs have correct value attribute on submit
+  document.querySelector('form').addEventListener('submit', function() {
+    updateSummaryConstraintsTable();
+    document.querySelectorAll('.summary-value-cell input[type="hidden"]').forEach(inp => {
+      inp.setAttribute('value', inp.value);
+    });
+  });
 });

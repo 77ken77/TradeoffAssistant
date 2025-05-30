@@ -1,5 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
+  <!-- 1) Summary of Constraints Table -->
+  <h2>Summary of Constraints</h2>
+  <table id="summary-constraints-table" class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Criterion</th>
+        {% for dn in design_names %}
+          <th>{{ dn }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for i in range(names|length) %}
+      <tr>
+        <td>{{ names[i] }}</td>
+        {% for val in raw_data[names[i]] %}
+          <td>{{ val }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
   <h2>Results</h2>
 
   <table id="results-table" class="table table-bordered">

@@ -78,6 +78,31 @@
     </tbody>
   </table>
 
+  <!-- 4) Summary of Constraints Table -->
+  <h2 class="mt-4">Summary of Constraints</h2>
+  <table id="summary-constraints-table" class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Constraint</th>
+        {% for dd in design_defaults %}
+          <th>{{ dd }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for i in range(5) %}
+      <tr>
+        <td class="constraint-label-summary">{{ letters[i] }}</td>
+        {% for d in range(3) %}
+        <td class="summary-value-cell" data-constraint-index="{{ i }}" data-design-index="{{ d }}">
+          <input type="hidden" name="summary_{{ i }}_{{ d }}" value="">
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
   <button type="submit" class="btn btn-primary mt-3">Submit</button>
 </form>
 {% endblock %}
