@@ -93,25 +93,33 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.appendChild(row);
         attachRowEvents(row, table);
         updateTableSum(table);
+        setupDynamicInputWidths(); // Ensure new row inputs are auto-sized
       };
     });
     // Attach events to all existing rows (for copy-pasted rows)
     document.querySelectorAll('.item-table tbody tr').forEach(row => {
       const table = row.closest('table');
       attachRowEvents(row, table);
+      setupDynamicInputWidths(); // Ensure all row inputs are auto-sized
     });
   }
 
   function attachRowEvents(row, table) {
     row.querySelectorAll('input').forEach(inp => {
-      inp.oninput = () => updateTableSum(table);
+      inp.oninput = () => {
+        updateTableSum(table);
+        autoResizeInput(inp); // Auto-size on input
+      };
+      autoResizeInput(inp); // Initial auto-size
     });
     row.querySelector('.delete-item-btn').onclick = () => {
       row.remove();
       updateTableSum(table);
+      setupDynamicInputWidths(); // Re-apply after delete
     };
     row.querySelector('.copy-item-btn').onclick = () => {
       copyItemToAllDesigns(row, table.id);
+      setupDynamicInputWidths(); // Re-apply after copy
     };
     // Update sum on load
     updateTableSum(table);
@@ -407,4 +415,50 @@ document.addEventListener('DOMContentLoaded', () => {
       inp.setAttribute('value', inp.value);
     });
   });
+
+  // --- DYNAMIC INPUT WIDTHS ---
+  function autoResizeInput(input) {
+    // Create a temporary span to measure text width
+    const span = document.createElement('span');
+    span.style.visibility = 'hidden';
+    span.style.position = 'fixed';
+    span.style.whiteSpace = 'pre';
+    span.style.font = getComputedStyle(input).font;
+    span.textContent = input.value || input.placeholder || '';
+    document.body.appendChild(span);
+    // Add some extra space for cursor
+    const width = Math.max(span.offsetWidth + 18, 32); // min 32px
+    input.style.width = width + 'px';
+    document.body.removeChild(span);
+  }
+
+  function setupDynamicInputWidths() {
+    // For all .dynamic-width inputs
+    document.querySelectorAll('input.dynamic-width').forEach(inp => {
+      autoResizeInput(inp);
+      inp.addEventListener('input', () => autoResizeInput(inp));
+    });
+    // For item table value/qty inputs
+    document.querySelectorAll('.item-table input[type="number"], .item-table input[type="text"]').forEach(inp => {
+      autoResizeInput(inp);
+      inp.addEventListener('input', () => autoResizeInput(inp));
+    });
+  }
+
+  // Call after DOM loaded and after any table update
+  setupDynamicInputWidths();
+
+  // Also call after design value tables or item tables are updated
+  const origUpdateDesignValueTables = updateDesignValueTables;
+  updateDesignValueTables = function() {
+    origUpdateDesignValueTables();
+    setupDynamicInputWidths();
+  };
+
+  // Also call after import
+  const origImportFormData = importFormData;
+  importFormData = function(file) {
+    origImportFormData(file);
+    setTimeout(setupDynamicInputWidths, 300);
+  };
 });

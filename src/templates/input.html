@@ -1,107 +1,120 @@
 {% extends "base.html" %}
 {% block content %}
 <form method="post">
-  <!-- 1) Design names -->
+  <!-- 1) Design names in a single row with equal width and spacing -->
   <h2>Design Names</h2>
-  <div id="design-name-inputs" class="d-flex gap-2 mb-4">
-    {% for dd in design_defaults %}
-      <input
-        name="design_names"
-        type="text"
-        class="form-control"
-        placeholder="{{ dd }}"
-        value="{{ dd }}"
-        required>
-    {% endfor %}
+  <div class="container-fluid px-0 mb-3">
+    <div class="row g-2">
+      {% for dd in design_defaults %}
+        <div class="col">
+          <input
+            name="design_names"
+            type="text"
+            class="form-control text-center"
+            placeholder="{{ dd }}"
+            value="{{ dd }}"
+            required>
+        </div>
+      {% endfor %}
+    </div>
   </div>
 
-  <!-- 2) Constraints table -->
-  <h2>Define Constraints</h2>
-  <table id="constraints-table" class="table table-bordered">
-    <thead>
-      <tr>
-        <th>Constraint</th><th>Type</th><th>Preference</th><th>Importance</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for i in range(5) %}
-      <tr>
-        <td>
-          <input name="constraint_names" type="text" class="form-control" required>
-        </td>
-        <td>
-          <select name="constraint_types" class="form-select constraint-type-select" data-constraint-index="{{ i }}">
-            <option value="single">Single</option>
-            <option value="total">Total</option>
-            <option value="average">Average</option>
-          </select>
-        </td>
-        <td>
-          <select name="constraint_prefs" class="form-select">
-            <option value="min">Minimization</option>
-            <option value="max">Maximization</option>
-          </select>
-        </td>
-        <td>
-          <select name="constraint_imps" class="form-select">
-            <option>10</option><option>9</option>
-            <option>8</option><option>7</option><option>6</option>
-          </select>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <!-- 2) Constraints and Summary side by side using Bootstrap row -->
+  <div class="container-fluid px-0">
+    <div class="row g-2 align-items-start">
+      <div class="col-md-6 col-12">
+        <h2 class="h5 mb-2">Define Constraints</h2>
+        <table id="constraints-table" class="table table-bordered table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Constraint</th><th>Type</th><th>Preference</th><th>Importance</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for i in range(5) %}
+            <tr>
+              <td>
+                <input name="constraint_names" type="text" class="form-control" required>
+              </td>
+              <td>
+                <select name="constraint_types" class="form-select constraint-type-select" data-constraint-index="{{ i }}">
+                  <option value="single">Single</option>
+                  <option value="total">Total</option>
+                  <option value="average">Average</option>
+                </select>
+              </td>
+              <td>
+                <select name="constraint_prefs" class="form-select">
+                  <option value="min">Minimization</option>
+                  <option value="max">Maximization</option>
+                </select>
+              </td>
+              <td>
+                <select name="constraint_imps" class="form-select">
+                  <option>10</option><option>9</option>
+                  <option>8</option><option>7</option><option>6</option>
+                </select>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="col-md-6 col-12">
+        <h2 class="h5 mb-2">Summary of Constraints</h2>
+        <table id="summary-constraints-table" class="table table-bordered table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Constraint</th>
+              {% for dd in design_defaults %}
+                <th>{{ dd }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for i in range(5) %}
+            <tr>
+              <td class="constraint-label-summary">{{ letters[i] }}</td>
+              {% for d in range(3) %}
+              <td class="summary-value-cell" data-constraint-index="{{ i }}" data-design-index="{{ d }}">
+                <span class="summary-visible-value"></span>
+                <input type="hidden" name="summary_{{ i }}_{{ d }}" value="">
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
   <!-- 3) Design values table -->
-  <h2 class="mt-4">Enter Design Values</h2>
-  <table id="designs-table" class="table table-bordered">
-    <thead>
-      <tr>
-        <th>Constraint</th>
-        {% for _ in design_defaults %}
-          <th class="design-header">{{ _ }}</th>
+  <div class="container-fluid px-0 mt-3">
+    <h2 class="h5 mb-2">Enter Design Values</h2>
+    <table id="designs-table" class="table table-bordered table-sm align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Constraint</th>
+          {% for _ in design_defaults %}
+            <th class="design-header">{{ _ }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in range(5) %}
+        <tr>
+          <td class="constraint-label">{{ letters[i] }}</td>
+          {% for d in range(3) %}
+          <td class="design-value-cell" data-constraint-index="{{ i }}" data-design-index="{{ d }}">
+            <input name="values_{{ i }}_{{ d }}" type="number" step="any" class="form-control design-value-input" required>
+          </td>
+          {% endfor %}
+        </tr>
         {% endfor %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for i in range(5) %}
-      <tr>
-        <td class="constraint-label">{{ letters[i] }}</td>
-        {% for d in range(3) %}
-        <td class="design-value-cell" data-constraint-index="{{ i }}" data-design-index="{{ d }}">
-          <input name="values_{{ i }}_{{ d }}" type="number" step="any" class="form-control design-value-input" required>
-        </td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <!-- 4) Summary of Constraints Table -->
-  <h2 class="mt-4">Summary of Constraints</h2>
-  <table id="summary-constraints-table" class="table table-bordered">
-    <thead>
-      <tr>
-        <th>Constraint</th>
-        {% for dd in design_defaults %}
-          <th>{{ dd }}</th>
-        {% endfor %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for i in range(5) %}
-      <tr>
-        <td class="constraint-label-summary">{{ letters[i] }}</td>
-        {% for d in range(3) %}
-        <td class="summary-value-cell" data-constraint-index="{{ i }}" data-design-index="{{ d }}">
-          <input type="hidden" name="summary_{{ i }}_{{ d }}" value="">
-        </td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </tbody>
+    </table>
+  </div>
 
   <button type="submit" class="btn btn-primary mt-3">Submit</button>
 </form>

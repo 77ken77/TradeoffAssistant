@@ -10,6 +10,8 @@ th, td {
   border: 1px solid #ccc;
   padding: 0.5rem;
   text-align: left;
+  vertical-align: top !important;
+  word-break: break-word;
 }
 .constraint-label {
   font-weight: bold;
@@ -20,3 +22,76 @@ th, td {
 }
 .mt-3 { margin-top: 1rem; }
 .mt-4 { margin-top: 1.5rem; }
+
+/* Always show table borders, even after JS updates */
+.table-bordered, .table-bordered th, .table-bordered td {
+  border: 1px solid #dee2e6 !important;
+}
+
+/* Align all columns to the top in Bootstrap rows */
+.row.align-items-start { align-items: flex-start !important; }
+
+/* Remove centering from smaller tables */
+#summary-constraints-table, #constraints-table {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Force all design value cells and item tables to fill row height and align to top */
+.design-value-cell, .item-table {
+  min-width: 320px;
+  height: 100%;
+  vertical-align: top !important;
+  overflow: auto;
+}
+
+/* For the design values table, use fixed layout for consistent column heights */
+#designs-table {
+  table-layout: auto;
+}
+#designs-table th, #designs-table td {
+  min-width: 220px;
+}
+
+/* DARK MODE STYLES */
+body.dark-mode {
+  background: #181a1b !important;
+  color: #e0e0e0 !important;
+}
+body.dark-mode .container, body.dark-mode .container-fluid {
+  background: #181a1b !important;
+}
+body.dark-mode table, body.dark-mode .table {
+  background: #23272b !important;
+  color: #e0e0e0 !important;
+}
+body.dark-mode th, body.dark-mode td {
+  background: #23272b !important;
+  color: #e0e0e0 !important;
+  border-color: #444 !important;
+}
+body.dark-mode .form-control, body.dark-mode .form-select {
+  background: #23272b !important;
+  color: #e0e0e0 !important;
+  border-color: #444 !important;
+}
+body.dark-mode .form-control:focus, body.dark-mode .form-select:focus {
+  background: #23272b !important;
+  color: #fff !important;
+  border-color: #888 !important;
+}
+body.dark-mode .btn-primary {
+  background: #375a7f !important;
+  border-color: #375a7f !important;
+}
+body.dark-mode .btn-outline-secondary {
+  color: #e0e0e0 !important;
+  border-color: #888 !important;
+}
+body.dark-mode .btn-outline-secondary:hover {
+  background: #23272b !important;
+  color: #fff !important;
+}
+body.dark-mode .table-bordered, body.dark-mode .table-bordered th, body.dark-mode .table-bordered td {
+  border-color: #444 !important;
+}
