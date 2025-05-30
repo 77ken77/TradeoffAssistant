@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Results</h2>
+
+  <table id="results-table" class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Criterion</th>
+        <th>Importance</th>
+        <th>Percentage (%)</th>
+        {% for dn in design_names %}
+          <th>{{ dn }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for i in range(names|length) %}
+      <tr>
+        <td>{{ names[i] }}</td>
+        <td>{{ importances[i] }}</td>
+        <td>{{ pcts[i] }}</td>
+        {% for val in norms[i] %}
+          <td>{{ '%.2f'|format(val) }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+      <tr>
+        <th>Total</th>
+        <th>{{ total_imp }}</th>
+        <th>100%</th>
+        {% for sc in scores %}
+          <th>{{ '%.3f'|format(sc) }}</th>
+        {% endfor %}
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Sensitivity Analysis as before -->
+  <h3>Sensitivity Analysis</h3>
+  <img
+    src="{{ url_for('static', filename='img/sensitivity_analysis.png') }}"
+    alt="Sensitivity Analysis Radar Chart"
+    style="max-width:100%; border:1px solid #ccc; padding:0.5rem;"
+  />
+  <p>
+    A radar chart was used to visualize the scores obtained from a sensitivity analysis conducted on the
+    three alternative designs presented. A total of 120 combinations were considered for this analysis.
+    Figure 3-1 shows the result of the sensitivity analysis of the three designs:
+    {{ design_names[0] }}, {{ design_names[1] }}, and {{ design_names[2] }}.
+  </p>
+{% endblock %}
