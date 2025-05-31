@@ -110,3 +110,81 @@ body.dark-mode .item-qty.duplicate-item {
   border: 2px solid #fff !important;
   /* JS sets background-color inline, but border ensures visibility */
 }
+
+/* Make the main container full width and reduce side margins */
+.container, .container-fluid {
+  max-width: 100% !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+}
+
+body, html {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+main.container {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: 100vw !important;
+  min-width: 0 !important;
+}
+
+/* Remove card centering and add left bias */
+.card {
+  margin-left: 0 !important;
+}
+
+/* Make Delete and Copy columns fit their buttons, but keep buttons fully visible and clickable */
+.item-table th:nth-child(5), .item-table th:nth-child(6),
+.item-table td:nth-child(5), .item-table td:nth-child(6) {
+  width: 1%;
+  min-width: 70px !important;
+  max-width: 90px !important;
+  padding-left: 0.1rem !important;
+  padding-right: 0.1rem !important;
+  text-align: center;
+  white-space: nowrap;
+  overflow: visible;
+}
+.item-table .delete-item-btn, .item-table .copy-item-btn {
+  min-width: 65px;
+  width: 100%;
+  max-width: 100%;
+  padding: 0 4px;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+/* Remove table-layout: fixed if set anywhere for item-table */
+.item-table {
+  table-layout: auto !important;
+}
+
+/* Shrink Value, QTY, and Total Value columns in item tables and center them */
+.item-table th:nth-child(2), .item-table td:nth-child(2) { /* Value */
+  width: 80px !important;
+  min-width: 60px !important;
+  max-width: 90px !important;
+  text-align: center !important;
+}
+.item-table th:nth-child(3), .item-table td:nth-child(3) { /* QTY */
+  width: 55px !important;
+  min-width: 40px !important;
+  max-width: 65px !important;
+  text-align: center !important;
+}
+.item-table th:nth-child(4), .item-table td:nth-child(4) { /* Total Value */
+  width: 90px !important;
+  min-width: 70px !important;
+  max-width: 100px !important;
+  text-align: center !important;
+}
+.item-table input.item-value,
+.item-table input.item-qty {
+  max-width: 100%;
+  width: 100%;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+  text-align: center;
+}

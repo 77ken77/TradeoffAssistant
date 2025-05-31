@@ -42,23 +42,29 @@ def index():
             vals.append(row)
 
         # DEBUG: Print all incoming form data
-        print('--- FORM DATA ---')
+        print('--- FORM DATA ---', flush=True)
         for k in request.form:
-            print(f'{k}: {request.form.getlist(k)}')
-        print('-----------------')
+            print(f'{k}: {request.form.getlist(k)}', flush=True)
+        print('-----------------', flush=True)
 
         # DEBUG: Print the vals matrix
-        print('--- VALS MATRIX ---')
+        print('--- VALS MATRIX ---', flush=True)
         for i, row in enumerate(vals):
-            print(f'Constraint {i}: {row}')
-        print('-------------------')
+            print(f'Constraint {i}: {row}', flush=True)
+        print('-------------------', flush=True)
 
         # Build raw_data: {constraint_name: [v1, v2, v3], ...}
         raw_data = {
             name: row
             for name, row in zip(names, vals)
         }
+        print('--- RAW DATA ---', flush=True)
+        print(raw_data, flush=True)
+        print('----------------', flush=True)
         df_raw  = pd.DataFrame(raw_data, index=design_names)
+        print('--- DF_RAW ---', flush=True)
+        print(df_raw, flush=True)
+        print('---------------', flush=True)
         df_norm = pd.DataFrame(index=df_raw.index, columns=names, dtype=float)
 
         for col, pref in zip(names, prefs):
@@ -71,22 +77,75 @@ def index():
             else:
                 df_norm[col] = 9 * (mx - col_vals) / (mx - mn) + 1
             df_norm[col] = df_norm[col].round(6)
+        print('--- DF_NORM ---', flush=True)
+        print(df_norm, flush=True)
+        print('---------------', flush=True)
 
         # 3) Compute weighted, normalized scores
         total_imp = sum(importances)
         pcts      = [imp / total_imp * 100 for imp in importances]
         # norms as list-of-5 rows, each [score1,score2,score3]
         norms     = df_norm.T.values.tolist()
+        print('--- NORMS ---', flush=True)
+        print(norms, flush=True)
+        print('-------------', flush=True)
 
+        # Print table-style results for debugging
+        print('--- TABLE RESULTS ---', flush=True)
+        print('Criterion | Importance | Percentage (%) | ' + ' | '.join(design_names), flush=True)
+        for i, name in enumerate(names):
+            row = [name, importances[i], f'{pcts[i]:.2f}'] + [f'{val:.2f}' for val in norms[i]]
+            print(' | '.join(map(str, row)), flush=True)
         scores = []
         for d in range(len(design_names)):
             s = sum(norms[i][d] * pcts[i] / 100 for i in range(len(norms)))
             scores.append(round(s, 3))
+        print('Total | {} | 100 | {}'.format(total_imp, ' | '.join([f'{sc:.2f}' for sc in scores])), flush=True)
+        print('---------------------', flush=True)
+
+        # Defensive: Only proceed if all required data is present
+        if not (names and importances and prefs and design_names and len(vals) == 5 and all(len(row) == 3 for row in vals)):
+            print('--- INCOMPLETE DATA FOR RESULTS ---', flush=True)
+            print(f'names: {names}', flush=True)
+            print(f'importances: {importances}', flush=True)
+            print(f'prefs: {prefs}', flush=True)
+            print(f'design_names: {design_names}', flush=True)
+            print(f'vals: {vals}', flush=True)
+            print('-------------------------------', flush=True)
+            # Render only summary, not results
+            return render_template(
+                'input.html',
+                letters=['A','B','C','D','E'],
+                design_defaults=['Design 1','Design 2','Design 3'],
+                names=names,
+                importances=importances,
+                pcts=[],
+                norms=[],
+                scores=[],
+                total_imp=0,
+                raw_data={}
+            )
 
         # 4) Regenerate sensitivity chart
         _generate_sensitivity_chart(df_raw, prefs, names)
 
         # 5) Render results, passing design_names through
+        # If this is an AJAX POST (from JS), return the input.html with all context for dynamic update
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return render_template(
+                'input.html',
+                letters=['A','B','C','D','E'],
+                design_defaults=['Design 1','Design 2','Design 3'],
+                names=names,
+                importances=importances,
+                pcts=[round(x, 1) for x in pcts],
+                norms=norms,
+                scores=scores,
+                total_imp=total_imp,
+                raw_data=raw_data,
+                design_names=design_names
+            )
+        # Otherwise, fallback to results.html (for direct navigation)
         return render_template(
             'results.html',
             design_names=design_names,

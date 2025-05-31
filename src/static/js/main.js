@@ -273,29 +273,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- SUMMARY OF CONSTRAINTS TABLE (INPUT PAGE) ---
   function updateSummaryConstraintsTable() {
+    // For each summary cell, copy the value from the corresponding design value input or item table
     document.querySelectorAll('.summary-value-cell').forEach(cell => {
       const i = cell.getAttribute('data-constraint-index');
       const d = cell.getAttribute('data-design-index');
-      // If item table, sum all items; else, use input value
+      // Find the corresponding input or item table in the design values table
       const designCell = document.querySelector(`.design-value-cell[data-constraint-index='${i}'][data-design-index='${d}']`);
       let value = '';
       if (designCell) {
         const table = designCell.querySelector('.item-table');
         if (table) {
-          // Sum all item values
-          let sum = 0;
+          // Sum or average all item rows
+          let sum = 0, count = 0;
           table.querySelectorAll('tbody tr').forEach(row => {
             const val = parseFloat(row.querySelector('.item-value')?.value || '0');
             const qty = parseFloat(row.querySelector('.item-qty')?.value || '1');
             sum += val * qty;
+            count++;
           });
-          value = sum.toFixed(2);
+          // Determine if this is a total or average constraint
+          const tfootLabelCell = table.querySelector('tfoot tr td');
+          const isAverage = tfootLabelCell && tfootLabelCell.textContent.includes('AVERAGE');
+          value = isAverage && count ? (sum / count).toFixed(2) : sum.toFixed(2);
         } else {
           const inp = designCell.querySelector('input.design-value-input');
           value = inp ? inp.value : '';
         }
       }
-      // Update visible value in a span, do not overwrite cell content
+      // Update the visible value in the summary table
       let span = cell.querySelector('.summary-visible-value');
       if (!span) {
         span = document.createElement('span');
@@ -303,13 +308,12 @@ document.addEventListener('DOMContentLoaded', () => {
         cell.prepend(span);
       }
       span.textContent = value;
-      // Update hidden input
+      // Update the hidden input
       const hidden = cell.querySelector('input[type="hidden"]');
-      if (hidden) hidden.value = value;
-    });
-    // Also update the value attribute of the hidden input (for form submission)
-    document.querySelectorAll('.summary-value-cell input[type="hidden"]').forEach(inp => {
-      inp.setAttribute('value', inp.value);
+      if (hidden) {
+        hidden.value = value;
+        hidden.setAttribute('value', value);
+      }
     });
   }
   // Update summary table on any input change
@@ -317,6 +321,85 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('change', updateSummaryConstraintsTable);
   // Initial update
   updateSummaryConstraintsTable();
+
+  // --- DYNAMIC RESULTS AND SENSITIVITY ANALYSIS ---
+  async function updateResultsAndSensitivity() {
+    // Ensure summary table and hidden inputs are up to date
+    updateSummaryConstraintsTable();
+    // Force all hidden summary inputs to have correct value attribute and property
+    document.querySelectorAll('.summary-value-cell input[type="hidden"]').forEach(inp => {
+      inp.setAttribute('value', inp.value);
+    });
+    // Gather all form data
+    const form = document.getElementById('tradeoff-form');
+    const formData = new FormData(form);
+    // Send AJAX POST to server (same endpoint)
+    const resp = await fetch(window.location.pathname, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    const html = await resp.text();
+    // Parse the returned HTML and extract results table and sensitivity chart
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    // Results Table
+    const newResults = doc.querySelector('#results-table-container');
+    const resultsContainer = document.getElementById('results-table-container');
+    if (newResults && resultsContainer) {
+      resultsContainer.innerHTML = newResults.innerHTML;
+      console.log('Results table updated.');
+    } else {
+      console.warn('Results table container not found!');
+    }
+    // Sensitivity Chart (force reload by updating src with timestamp)
+    const newImg = doc.querySelector('#sensitivity-chart-img');
+    const img = document.getElementById('sensitivity-chart-img');
+    if (newImg && img) {
+      setTimeout(() => {
+        const baseSrc = newImg.src.split('?')[0];
+        img.src = baseSrc + '?t=' + Date.now();
+        console.log('Sensitivity chart image refreshed.');
+      }, 150);
+    } else {
+      console.warn('Sensitivity chart image not found!');
+    }
+  }
+
+  // Listen for any input or change event in the form
+  const form = document.getElementById('tradeoff-form');
+  if (form) {
+    form.addEventListener('input', () => {
+      updateSummaryConstraintsTable();
+      updateResultsAndSensitivity();
+    });
+    form.addEventListener('change', () => {
+      updateSummaryConstraintsTable();
+      updateResultsAndSensitivity();
+    });
+  }
+  // Also update on refresh chart button
+  const refreshBtn = document.getElementById('refresh-sensitivity-btn');
+  if (refreshBtn) {
+    refreshBtn.onclick = updateResultsAndSensitivity;
+  }
+
+  // --- ENSURE RESULTS TABLE UPDATES AFTER IMPORT ---
+  function triggerResultsUpdateAfterImport() {
+    // Wait for DOM to update, then trigger results update
+    setTimeout(() => {
+      updateSummaryConstraintsTable();
+      updateResultsAndSensitivity();
+    }, 300);
+  }
+  // Patch importFormData to call this after import
+  if (typeof importFormData === 'function') {
+    const origImportFormData = importFormData;
+    window.importFormData = function(file) {
+      origImportFormData.call(this, file);
+      triggerResultsUpdateAfterImport();
+    };
+  }
 
   // EXPORT/IMPORT FEATURE
   // 1. Export all form data to JSON
@@ -453,23 +536,25 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.readAsText(file);
   }
 
-  // Add export/import buttons to the page
+  // Remove the old Export/Import button injection and rebind new buttons
   function addExportImportButtons() {
-    const form = document.querySelector('form');
-    if (!form) return;
-    const div = document.createElement('div');
-    div.style.marginBottom = '1rem';
-    div.innerHTML = `
-      <button type="button" id="export-btn">Export</button>
-      <input type="file" id="import-file" style="display:none" accept="application/json">
-      <button type="button" id="import-btn">Import</button>
-    `;
-    form.parentNode.insertBefore(div, form);
-    document.getElementById('export-btn').onclick = exportFormData;
-    document.getElementById('import-btn').onclick = () => {
-      document.getElementById('import-file').click();
-    };
-    document.getElementById('import-file').onchange = function(e) {
+    // Remove old Export/Import buttons if present
+    document.querySelectorAll('#export-btn, #import-btn, #import-file').forEach(el => el.remove());
+    // Bind new buttons
+    const exportBtn = document.getElementById('exportBtn');
+    const importBtn = document.getElementById('importBtn');
+    let importFile = document.getElementById('import-file');
+    if (!importFile) {
+      importFile = document.createElement('input');
+      importFile.type = 'file';
+      importFile.id = 'import-file';
+      importFile.style.display = 'none';
+      importFile.accept = 'application/json';
+      document.body.appendChild(importFile);
+    }
+    if (exportBtn) exportBtn.onclick = exportFormData;
+    if (importBtn) importBtn.onclick = () => importFile.click();
+    importFile.onchange = function(e) {
       if (e.target.files && e.target.files[0]) {
         importFormData(e.target.files[0]);
       }
