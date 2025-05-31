@@ -4,19 +4,28 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementsByName('constraint_names')
     .forEach((inp, idx) => {
       inp.addEventListener('input', () => {
+        // Update label in Enter Design Values table
         document.querySelectorAll('#designs-table .constraint-label')[idx]
+          .textContent = inp.value.trim() || defaultLabels[idx];
+        // Update label in Summary of Constraints table
+        document.querySelectorAll('.constraint-label-summary')[idx]
           .textContent = inp.value.trim() || defaultLabels[idx];
       });
   });
 
-  // B) Update design headers live
+  // B) Update design headers live (update both Enter Design Values and Summary of Constraints tables)
   const defaultDesigns = ['Design 1','Design 2','Design 3'];
   const designInputs = document.getElementsByName('design_names');
   const designHeaders = document.querySelectorAll('#designs-table .design-header');
+  const summaryHeaders = document.querySelectorAll('#summary-constraints-table thead th');
 
   designInputs.forEach((inp, idx) => {
     inp.addEventListener('input', () => {
       designHeaders[idx].textContent = inp.value.trim() || defaultDesigns[idx];
+      // Update summary table design headers (skip first column, which is 'Constraint')
+      if (summaryHeaders[idx+1]) {
+        summaryHeaders[idx+1].textContent = inp.value.trim() || defaultDesigns[idx];
+      }
     });
   });
 
@@ -378,10 +387,23 @@ document.addEventListener('DOMContentLoaded', () => {
       updateResultsAndSensitivity();
     });
   }
-  // Also update on refresh chart button
+  // Change Refresh Chart button to Download Image (green)
   const refreshBtn = document.getElementById('refresh-sensitivity-btn');
   if (refreshBtn) {
-    refreshBtn.onclick = updateResultsAndSensitivity;
+    refreshBtn.textContent = 'Download Image';
+    refreshBtn.classList.remove('btn-outline-secondary', 'btn-sm');
+    refreshBtn.classList.add('btn-success');
+    refreshBtn.onclick = function() {
+      const img = document.getElementById('sensitivity-chart-img');
+      if (img && img.src) {
+        const link = document.createElement('a');
+        link.href = img.src;
+        link.download = 'sensitivity_analysis.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    };
   }
 
   // --- ENSURE RESULTS TABLE UPDATES AFTER IMPORT ---

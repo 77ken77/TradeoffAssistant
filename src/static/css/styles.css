@@ -156,16 +156,49 @@ main.container {
   line-height: 1.2;
   white-space: nowrap;
 }
+.item-table .delete-item-btn {
+  background: #a83232 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 4px;
+  font-weight: bold;
+  padding: 2px 8px;
+  transition: background 0.2s;
+}
+.item-table .delete-item-btn:hover, .item-table .delete-item-btn:focus {
+  background: #ff4444 !important;
+  color: #fff !important;
+}
+
+.item-table .copy-item-btn {
+  background: #444 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 4px;
+  font-weight: bold;
+  padding: 2px 8px;
+  transition: background 0.2s;
+}
+.item-table .copy-item-btn:hover, .item-table .copy-item-btn:focus {
+  background: #888 !important;
+  color: #fff !important;
+}
+
 /* Remove table-layout: fixed if set anywhere for item-table */
 .item-table {
   table-layout: auto !important;
 }
 
-/* Shrink Value, QTY, and Total Value columns in item tables and center them */
+/* Adjust Value and Item Name columns: Value wider, Item Name narrower */
+.item-table th:nth-child(1), .item-table td:nth-child(1) { /* Item Name */
+  width: 140px !important;
+  min-width: 100px !important;
+  max-width: 180px !important;
+}
 .item-table th:nth-child(2), .item-table td:nth-child(2) { /* Value */
-  width: 80px !important;
-  min-width: 60px !important;
-  max-width: 90px !important;
+  width: 120px !important;
+  min-width: 100px !important;
+  max-width: 160px !important;
   text-align: center !important;
 }
 .item-table th:nth-child(3), .item-table td:nth-child(3) { /* QTY */
@@ -187,4 +220,26 @@ main.container {
   padding-left: 0.25rem;
   padding-right: 0.25rem;
   text-align: center;
+}
+
+/* Highlight winning and losing designs in the results table */
+.result-win {
+  background: #1e5631 !important;
+  color: #fff !important;
+  font-weight: bold;
+}
+.result-lose {
+  background: #a83232 !important;
+  color: #fff !important;
+  font-weight: bold;
+}
+body.dark-mode .result-win {
+  background: transparent !important;
+  color: #6fff6f !important;
+  font-weight: bold;
+}
+body.dark-mode .result-lose {
+  background: transparent !important;
+  color: #ff6f6f !important;
+  font-weight: bold;
 }

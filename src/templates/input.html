@@ -116,7 +116,14 @@
                       <td>{{ importances[i] }}</td>
                       <td>{{ pcts[i] }}</td>
                       {% for val in norms[i] %}
-                        <td>{{ '%.2f'|format(val) }}</td>
+                        {% set val_str = '%.2f'|format(val) %}
+                        {% if val_str == '10.00' %}
+                          <td class="result-win">{{ val_str }}</td>
+                        {% elif val_str == '1.00' %}
+                          <td class="result-lose">{{ val_str }}</td>
+                        {% else %}
+                          <td>{{ val_str }}</td>
+                        {% endif %}
                       {% endfor %}
                     </tr>
                     {% endfor %}
