@@ -95,3 +95,18 @@ body.dark-mode .btn-outline-secondary:hover {
 body.dark-mode .table-bordered, body.dark-mode .table-bordered th, body.dark-mode .table-bordered td {
   border-color: #444 !important;
 }
+
+/* Highlight duplicate item rows and inputs (light mode) */
+tr.duplicate-item-row, .item-name.duplicate-item, .item-value.duplicate-item, .item-qty.duplicate-item {
+  /* JS sets background-color inline, but ensure border for contrast */
+  border: 2px solid #333 !important;
+}
+
+/* Highlight duplicate item rows and inputs (dark mode) */
+body.dark-mode tr.duplicate-item-row, 
+body.dark-mode .item-name.duplicate-item, 
+body.dark-mode .item-value.duplicate-item, 
+body.dark-mode .item-qty.duplicate-item {
+  border: 2px solid #fff !important;
+  /* JS sets background-color inline, but border ensures visibility */
+}

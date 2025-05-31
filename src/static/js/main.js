@@ -127,46 +127,48 @@ document.addEventListener('DOMContentLoaded', () => {
     names.forEach((name, idx) => {
       colorMap[name] = ITEM_COLOR_PALETTE[idx % ITEM_COLOR_PALETTE.length];
     });
-    // Remove highlight from all rows first
+    // Remove highlight and classes from all rows and inputs first
     allInputs.forEach(inp => {
       const row = inp.closest('tr');
       if (row) {
         row.style.backgroundColor = '';
+        row.classList.remove('duplicate-item-row');
       }
       inp.style.backgroundColor = '';
+      inp.classList.remove('duplicate-item');
+      // Remove from value/qty as well
+      const valueInput = row?.querySelector('.item-value');
+      const qtyInput = row?.querySelector('.item-qty');
+      if (valueInput) {
+        valueInput.style.backgroundColor = '';
+        valueInput.classList.remove('duplicate-item');
+      }
+      if (qtyInput) {
+        qtyInput.style.backgroundColor = '';
+        qtyInput.classList.remove('duplicate-item');
+      }
     });
-    // Detect dark mode
-    const isDark = document.body.classList.contains('dark-mode');
-    // Helper to darken a hex color
-    function darken(hex, factor = 0.45) {
-      hex = hex.replace('#', '');
-      if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
-      const num = parseInt(hex, 16);
-      let r = (num >> 16) & 0xff, g = (num >> 8) & 0xff, b = num & 0xff;
-      r = Math.floor(r * factor);
-      g = Math.floor(g * factor);
-      b = Math.floor(b * factor);
-      return `rgb(${r},${g},${b})`;
-    }
-    // Helper to blend a hex color with a dark base for dark mode
-    function blendWithDark(hex, factor = 0.7, base = 24) {
-      hex = hex.replace('#', '');
-      if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
-      const num = parseInt(hex, 16);
-      let r = (num >> 16) & 0xff, g = (num >> 8) & 0xff, b = num & 0xff;
-      // Blend with dark base (e.g., #181a1b)
-      r = Math.round(r * factor + base * (1 - factor));
-      g = Math.round(g * factor + base * (1 - factor));
-      b = Math.round(b * factor + base * (1 - factor));
-      return `rgb(${r},${g},${b})`;
-    }
-    // Apply background color to all rows with duplicate item names
+    // Apply background color and classes to all rows and inputs with duplicate item names
     allInputs.forEach(inp => {
       const val = inp.value.trim().toLowerCase();
+      const row = inp.closest('tr');
       if (val && colorMap[val]) {
-        const row = inp.closest('tr');
         if (row) {
-          row.style.backgroundColor = isDark ? blendWithDark(colorMap[val], 0.7, 24) : colorMap[val];
+          row.style.backgroundColor = colorMap[val];
+          row.classList.add('duplicate-item-row');
+        }
+        inp.style.backgroundColor = colorMap[val];
+        inp.classList.add('duplicate-item');
+        // Also highlight value and qty inputs in the same row
+        const valueInput = row?.querySelector('.item-value');
+        const qtyInput = row?.querySelector('.item-qty');
+        if (valueInput) {
+          valueInput.style.backgroundColor = colorMap[val];
+          valueInput.classList.add('duplicate-item');
+        }
+        if (qtyInput) {
+          qtyInput.style.backgroundColor = colorMap[val];
+          qtyInput.classList.add('duplicate-item');
         }
       }
     });
