@@ -93,14 +93,82 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.appendChild(row);
         attachRowEvents(row, table);
         updateTableSum(table);
-        setupDynamicInputWidths(); // Ensure new row inputs are auto-sized
+        highlightDuplicateItems();
       };
     });
     // Attach events to all existing rows (for copy-pasted rows)
     document.querySelectorAll('.item-table tbody tr').forEach(row => {
       const table = row.closest('table');
       attachRowEvents(row, table);
-      setupDynamicInputWidths(); // Ensure all row inputs are auto-sized
+      highlightDuplicateItems();
+    });
+  }
+
+  // Color palette for item highlights
+  const ITEM_COLOR_PALETTE = [
+    '#ffe082', '#b2dfdb', '#ffab91', '#b39ddb', '#c5e1a5', '#f8bbd0', '#80cbc4', '#ffd54f', '#90caf9', '#bcaaa4',
+    '#f48fb1', '#aed581', '#ffcc80', '#e1bee7', '#fff59d', '#a5d6a7', '#ce93d8', '#ffecb3', '#b0bec5', '#d7ccc8'
+  ];
+
+  function highlightDuplicateItems() {
+    // Collect all item-name inputs
+    const allInputs = Array.from(document.querySelectorAll('.item-name'));
+    // Map: lowercased name -> [inputs]
+    const nameMap = {};
+    allInputs.forEach(inp => {
+      const val = inp.value.trim().toLowerCase();
+      if (!val) return;
+      if (!nameMap[val]) nameMap[val] = [];
+      nameMap[val].push(inp);
+    });
+    // Assign a color to each duplicate name (only if appears more than once)
+    const names = Object.keys(nameMap).filter(name => nameMap[name].length > 1);
+    const colorMap = {};
+    names.forEach((name, idx) => {
+      colorMap[name] = ITEM_COLOR_PALETTE[idx % ITEM_COLOR_PALETTE.length];
+    });
+    // Remove highlight from all rows first
+    allInputs.forEach(inp => {
+      const row = inp.closest('tr');
+      if (row) {
+        row.style.backgroundColor = '';
+      }
+      inp.style.backgroundColor = '';
+    });
+    // Detect dark mode
+    const isDark = document.body.classList.contains('dark-mode');
+    // Helper to darken a hex color
+    function darken(hex, factor = 0.45) {
+      hex = hex.replace('#', '');
+      if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+      const num = parseInt(hex, 16);
+      let r = (num >> 16) & 0xff, g = (num >> 8) & 0xff, b = num & 0xff;
+      r = Math.floor(r * factor);
+      g = Math.floor(g * factor);
+      b = Math.floor(b * factor);
+      return `rgb(${r},${g},${b})`;
+    }
+    // Helper to blend a hex color with a dark base for dark mode
+    function blendWithDark(hex, factor = 0.7, base = 24) {
+      hex = hex.replace('#', '');
+      if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+      const num = parseInt(hex, 16);
+      let r = (num >> 16) & 0xff, g = (num >> 8) & 0xff, b = num & 0xff;
+      // Blend with dark base (e.g., #181a1b)
+      r = Math.round(r * factor + base * (1 - factor));
+      g = Math.round(g * factor + base * (1 - factor));
+      b = Math.round(b * factor + base * (1 - factor));
+      return `rgb(${r},${g},${b})`;
+    }
+    // Apply background color to all rows with duplicate item names
+    allInputs.forEach(inp => {
+      const val = inp.value.trim().toLowerCase();
+      if (val && colorMap[val]) {
+        const row = inp.closest('tr');
+        if (row) {
+          row.style.backgroundColor = isDark ? blendWithDark(colorMap[val], 0.7, 24) : colorMap[val];
+        }
+      }
     });
   }
 
@@ -108,18 +176,18 @@ document.addEventListener('DOMContentLoaded', () => {
     row.querySelectorAll('input').forEach(inp => {
       inp.oninput = () => {
         updateTableSum(table);
-        autoResizeInput(inp); // Auto-size on input
+        if (inp.classList.contains('item-name')) highlightDuplicateItems();
       };
-      autoResizeInput(inp); // Initial auto-size
+      if (inp.classList.contains('item-name')) highlightDuplicateItems();
     });
     row.querySelector('.delete-item-btn').onclick = () => {
       row.remove();
       updateTableSum(table);
-      setupDynamicInputWidths(); // Re-apply after delete
+      highlightDuplicateItems();
     };
     row.querySelector('.copy-item-btn').onclick = () => {
       copyItemToAllDesigns(row, table.id);
-      setupDynamicInputWidths(); // Re-apply after copy
+      highlightDuplicateItems();
     };
     // Update sum on load
     updateTableSum(table);
@@ -377,6 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.item-table').forEach(table => updateTableSum(table));
         // Ensure summary table and hidden inputs are updated after import
         updateSummaryConstraintsTable();
+        highlightDuplicateItems();
       }, 200);
     };
     reader.readAsText(file);
@@ -416,49 +485,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // --- DYNAMIC INPUT WIDTHS ---
-  function autoResizeInput(input) {
-    // Create a temporary span to measure text width
-    const span = document.createElement('span');
-    span.style.visibility = 'hidden';
-    span.style.position = 'fixed';
-    span.style.whiteSpace = 'pre';
-    span.style.font = getComputedStyle(input).font;
-    span.textContent = input.value || input.placeholder || '';
-    document.body.appendChild(span);
-    // Add some extra space for cursor
-    const width = Math.max(span.offsetWidth + 18, 32); // min 32px
-    input.style.width = width + 'px';
-    document.body.removeChild(span);
-  }
-
-  function setupDynamicInputWidths() {
-    // For all .dynamic-width inputs
-    document.querySelectorAll('input.dynamic-width').forEach(inp => {
-      autoResizeInput(inp);
-      inp.addEventListener('input', () => autoResizeInput(inp));
-    });
-    // For item table value/qty inputs
-    document.querySelectorAll('.item-table input[type="number"], .item-table input[type="text"]').forEach(inp => {
-      autoResizeInput(inp);
-      inp.addEventListener('input', () => autoResizeInput(inp));
-    });
-  }
-
-  // Call after DOM loaded and after any table update
-  setupDynamicInputWidths();
-
-  // Also call after design value tables or item tables are updated
-  const origUpdateDesignValueTables = updateDesignValueTables;
-  updateDesignValueTables = function() {
-    origUpdateDesignValueTables();
-    setupDynamicInputWidths();
-  };
-
-  // Also call after import
-  const origImportFormData = importFormData;
-  importFormData = function(file) {
-    origImportFormData(file);
-    setTimeout(setupDynamicInputWidths, 300);
-  };
+  // Initial highlight on page load
+  highlightDuplicateItems();
 });
