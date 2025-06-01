@@ -40,6 +40,41 @@ export function initItemTableContainer() {
   delegate(document, 'input', '.item-name, .item-value, .item-qty', e => updateRow(e.target.closest('tr')));
 }
 
+// Listen for constraint type changes and update design value cells accordingly
+function handleConstraintTypeChange(e) {
+  const sel = e.target;
+  const constraintIdx = sel.getAttribute('data-constraint-index');
+  const type = sel.value;
+  document.querySelectorAll(`.design-value-cell[data-constraint-index='${constraintIdx}']`).forEach((cell, designIdx) => {
+    if (type === 'total' || type === 'average') {
+      // Render item table if not present
+      if (!cell.querySelector('.item-table')) {
+        cell.innerHTML = createItemTableHTML(constraintIdx, designIdx, type);
+      } else {
+        // Update label if switching between total/average
+        const tfootLabelCell = cell.querySelector('tfoot tr td');
+        if (tfootLabelCell) tfootLabelCell.textContent = type === 'total' ? 'TOTAL' : 'AVERAGE';
+      }
+      initItemTableContainer();
+      updateTableSum(cell.querySelector('.item-table'));
+    } else {
+      // Render single input if not present
+      if (!cell.querySelector('input.design-value-input')) {
+        cell.innerHTML = `<input name="values_${constraintIdx}_${designIdx}" type="number" step="any" class="form-control design-value-input" required>`;
+      }
+    }
+  });
+  refreshSummary();
+}
+
+// Attach event listener for constraint type changes
+export function initItemTableTypeSwitch() {
+  document.querySelectorAll('.constraint-type-select').forEach(sel => {
+    sel.removeEventListener('change', handleConstraintTypeChange); // prevent duplicate
+    sel.addEventListener('change', handleConstraintTypeChange);
+  });
+}
+
 function handleAddItem(e) {
   const table = document.getElementById(e.target.dataset.tableId);
   const tbody = table.querySelector('tbody');
@@ -75,9 +110,32 @@ function updateRow(row) {
   let qty = qtyInput ? parseFloat(qtyInput.value) || 1 : 1;
   const totalCell = row.querySelector('.item-total');
   if (totalCell) totalCell.textContent = (val * qty).toFixed(2);
+  // After updating a row, update the table sum for the parent table
+  const table = row.closest('.item-table');
+  if (table) updateTableSum(table);
   refreshSummary();
 }
 
-export function updateAllTables() {
-  $$('.item-table tbody tr').forEach(updateRow);
+function updateTableSum(table) {
+  let sum = 0, count = 0;
+  table.querySelectorAll('tbody tr').forEach(row => {
+    const val = parseFloat(row.querySelector('.item-value')?.value || '0');
+    const qty = parseFloat(row.querySelector('.item-qty')?.value || '1');
+    sum += val * qty;
+    count++;
+  });
+  const tfootLabelCell = table.querySelector('tfoot tr td');
+  const isAverage = tfootLabelCell && tfootLabelCell.textContent.includes('AVERAGE');
+  const sumCell = table.querySelector('.item-table-sum');
+  if (sumCell) sumCell.textContent = isAverage && count ? (sum / count).toFixed(2) : sum.toFixed(2);
 }
+
+export function updateAllTables() {
+  $$('.item-table').forEach(table => {
+    table.querySelectorAll('tbody tr').forEach(updateRow);
+    updateTableSum(table);
+  });
+}
+
+// At the end of the file, export updateTableSum for use in other modules
+export { updateTableSum };

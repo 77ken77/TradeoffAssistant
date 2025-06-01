@@ -1,7 +1,7 @@
 // Import all UI and IO modules and initialize the app
 import { initConstraintLabels } from './ui/constraint-labels.js';
 import { initDesignHeaders } from './ui/design-headers.js';
-import { initItemTableContainer, updateAllTables } from './ui/item-table.js';
+import { initItemTableContainer, updateAllTables, initItemTableTypeSwitch } from './ui/item-table.js';
 import { initSummaryAutoRefresh } from './ui/summary-table.js';
 import { initResultsAutoRefresh } from './ui/results-panel.js';
 import { highlightDuplicates } from './ui/duplicates.js';
@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initConstraintLabels();
   initDesignHeaders();
   initItemTableContainer();
+  initItemTableTypeSwitch();
   initSummaryAutoRefresh();
   initResultsAutoRefresh();
   addExportImportUI();
