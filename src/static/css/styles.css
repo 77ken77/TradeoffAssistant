@@ -95,6 +95,19 @@ body.dark-mode .btn-outline-secondary:hover {
 body.dark-mode .table-bordered, body.dark-mode .table-bordered th, body.dark-mode .table-bordered td {
   border-color: #444 !important;
 }
+body.dark-mode .card,
+body.dark-mode .card-body {
+  background: #23272b !important;
+  color: #e0e0e0 !important;
+  border-color: #444 !important;
+}
+body.dark-mode .card {
+  box-shadow: 0 2px 8px #0006 !important;
+}
+body.dark-mode .card-body {
+  background: inherit !important;
+  color: inherit !important;
+}
 
 /* Highlight duplicate item rows and inputs (light mode) */
 tr.duplicate-item-row, .item-name.duplicate-item, .item-value.duplicate-item, .item-qty.duplicate-item {
