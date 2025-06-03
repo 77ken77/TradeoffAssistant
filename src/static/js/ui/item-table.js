@@ -33,12 +33,31 @@ export function createItemTableHTML(constraintIdx, designIdx, type) {
   `;
 }
 
+let itemTableDelegated = false;
 export function initItemTableContainer() {
-  delegate(document, 'click', '.add-item-btn', handleAddItem);
-  delegate(document, 'click', '.delete-item-btn', handleDelete);
-  delegate(document, 'click', '.copy-item-btn', handleCopy);
-  delegate(document, 'input', '.item-name, .item-value, .item-qty', e => updateRow(e.target.closest('tr')));
+  console.log('initItemTableContainer called');
+  // Only handle table rendering, not event delegation
+  // Remove previous event listeners by replacing buttons with clones
+  document.querySelectorAll('.add-item-btn').forEach(btn => {
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+  });
+  document.querySelectorAll('.delete-item-btn').forEach(btn => {
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+  });
+  document.querySelectorAll('.copy-item-btn').forEach(btn => {
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+  });
+  // Do NOT delegate here anymore
 }
+
+// Delegate events ONCE at module load
+delegate(document, 'click', '.add-item-btn', handleAddItem);
+delegate(document, 'click', '.delete-item-btn', handleDelete);
+delegate(document, 'click', '.copy-item-btn', handleCopy);
+delegate(document, 'input', '.item-name, .item-value, .item-qty', e => updateRow(e.target.closest('tr')));
 
 // Listen for constraint type changes and update design value cells accordingly
 function handleConstraintTypeChange(e) {
@@ -76,6 +95,7 @@ export function initItemTableTypeSwitch() {
 }
 
 function handleAddItem(e) {
+  console.log('handleAddItem called', e);
   const table = document.getElementById(e.target.dataset.tableId);
   const tbody = table.querySelector('tbody');
   const row = document.createElement('tr');
