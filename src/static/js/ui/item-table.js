@@ -120,52 +120,7 @@ function handleDelete(e) {
 }
 
 function handleCopy(e) {
-  // Find the row and extract its values
-  const row = e.target.closest('tr');
-  if (!row) return;
-  const name = row.querySelector('.item-name')?.value?.trim();
-  const value = row.querySelector('.item-value')?.value;
-  const qty = row.querySelector('.item-qty')?.value;
-  if (!name) return;
-
-  // Find the table and extract constraint index from its id
-  const table = row.closest('.item-table');
-  if (!table) return;
-  const tableIdMatch = table.id.match(/^item-table-(\d+)-\d+$/);
-  if (!tableIdMatch) return;
-  const constraintIdx = tableIdMatch[1];
-
-  // For all tables with the same constraint index, copy or update the row
-  document.querySelectorAll(`.item-table[id^="item-table-${constraintIdx}-"]`).forEach(targetTable => {
-    // Check if item already exists in this table
-    let found = false;
-    targetTable.querySelectorAll('tbody tr').forEach(targetRow => {
-      const targetName = targetRow.querySelector('.item-name')?.value?.trim();
-      if (targetName === name) {
-        // Update value and qty
-        targetRow.querySelector('.item-value').value = value;
-        targetRow.querySelector('.item-qty').value = qty;
-        updateRow(targetRow);
-        found = true;
-      }
-    });
-    if (!found) {
-      // Add new row
-      const tbody = targetTable.querySelector('tbody');
-      const newRow = document.createElement('tr');
-      newRow.innerHTML = `
-        <td><input type="text" class="item-name" required value="${name}"></td>
-        <td><input type="number" class="item-value" value="${value}" step="any" required></td>
-        <td><input type="number" class="item-qty" value="${qty}" min="1" step="1" required></td>
-        <td class="item-total">0</td>
-        <td><button type="button" class="delete-item-btn">X DELETE</button></td>
-        <td><button type="button" class="copy-item-btn">COPY</button></td>
-      `;
-      tbody.appendChild(newRow);
-      updateRow(newRow);
-    }
-  });
-  highlightDuplicates();
+  // Implement copy logic as needed
 }
 
 function updateRow(row) {
