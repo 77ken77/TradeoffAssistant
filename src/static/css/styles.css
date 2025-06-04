@@ -256,3 +256,17 @@ body.dark-mode .result-lose {
   color: #ff6f6f !important;
   font-weight: bold;
 }
+
+/* Gradient for mid results: background will be set inline via JS */
+.result-mid {
+  background: #ffaa00 !important ; /* The variable */
+  color: #000000 !important;
+  font-weight: bold;
+  /* background will be set inline for each cell */
+}
+body.dark-mode .result-mid {
+  background: transparent !important;
+  color: #ffaa00 !important; /* The variable */
+  font-weight: bold;
+  /* background will be set inline for each cell */
+}

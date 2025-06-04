@@ -118,11 +118,11 @@
                       {% for val in norms[i] %}
                         {% set val_str = '%.2f'|format(val) %}
                         {% if val_str == '10.00' %}
-                          <td class="result-win">{{ val_str }}</td>
+                          <td class="result-win" data-val="{{ val_str }}">{{ val_str }}</td>
                         {% elif val_str == '1.00' %}
-                          <td class="result-lose">{{ val_str }}</td>
+                          <td class="result-lose" data-val="{{ val_str }}">{{ val_str }}</td>
                         {% else %}
-                          <td>{{ val_str }}</td>
+                          <td class="result-mid" data-val="{{ val_str }}">{{ val_str }}</td>
                         {% endif %}
                       {% endfor %}
                     </tr>
