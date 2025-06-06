@@ -120,7 +120,27 @@ function handleDelete(e) {
 }
 
 function handleCopy(e) {
-  // Implement copy logic as needed
+  const sourceRow = e.target.closest('tr');
+  if (!sourceRow) return;
+  const name = sourceRow.querySelector('.item-name')?.value || '';
+  const value = sourceRow.querySelector('.item-value')?.value || '0';
+  const qty = sourceRow.querySelector('.item-qty')?.value || '1';
+  // Copy to all item tables
+  document.querySelectorAll('.item-table').forEach(table => {
+    const tbody = table.querySelector('tbody');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><input type="text" class="item-name" required value="${name}"></td>
+      <td><input type="number" class="item-value" value="${value}" step="any" required></td>
+      <td><input type="number" class="item-qty" value="${qty}" min="1" step="1" required></td>
+      <td class="item-total">0</td>
+      <td><button type="button" class="delete-item-btn">X DELETE</button></td>
+      <td><button type="button" class="copy-item-btn">COPY</button></td>
+    `;
+    tbody.appendChild(row);
+    updateRow(row);
+  });
+  highlightDuplicates();
 }
 
 function updateRow(row) {
